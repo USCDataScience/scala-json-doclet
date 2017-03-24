@@ -20,7 +20,7 @@ java -jar target/*-jar-with-dependencies.jar -help
 Example 
 
     mkdir docs
-    java -jar target/*-jar-with-dependencies.jar  -d docs src/main/scala/**
+    java -jar target/*-jar-with-dependencies.jar -d docs src/main/scala/**
 
 
 Note:

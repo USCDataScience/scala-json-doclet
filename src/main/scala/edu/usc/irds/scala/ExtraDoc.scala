@@ -43,9 +43,8 @@ object ExtraDoc {
   def process(args: Array[String]): Unit = {
     
     val docSettings = new ExtraDocSettings(error)
-    
+    docSettings.usejavacp.value = true
     reporter = new ConsoleReporter(docSettings)
-    
     val command =
       new CompilerCommand(args.toList, docSettings)
       

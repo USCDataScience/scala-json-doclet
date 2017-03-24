@@ -6,6 +6,7 @@
     <inceptionYear>2017</inceptionYear>
     <properties>
         <scala.version>2.11.8</scala.version>
+        <exec.mainClass>edu.usc.irds.scala.ExtraDoc</exec.mainClass>
     </properties>
 
     <build>
@@ -40,7 +41,7 @@
                     </descriptorRefs>
                     <archive>
                         <manifest>
-                            <mainClass>edu.usc.irds.scala.ExtraDoc</mainClass>
+                            <mainClass>${exec.mainClass}</mainClass>
                         </manifest>
                     </archive>
                 </configuration>
@@ -63,5 +64,13 @@
             <artifactId>scala-compiler</artifactId>
             <version>${scala.version}</version>
         </dependency>
+
+        <!-- A sample lib to generate scaladoc
+        <dependency>
+            <groupId>org.apache.spark</groupId>
+            <artifactId>spark-mllib_2.11</artifactId>
+            <version>2.1.0</version>
+        </dependency>
+        -->
     </dependencies>
 </project>

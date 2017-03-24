@@ -311,7 +311,7 @@ abstract class JsonBuilder[Link : CanBeValue] {
       j += "hi" -> tp.hi.get.name
     }
     if (tp.lo.isDefined){
-      j += "lo" -> tp.hi.get.name
+      j += "lo" -> tp.lo.get.name
     }
     j
   }
