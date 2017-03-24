@@ -277,10 +277,8 @@ abstract class JsonBuilder[Link : CanBeValue] {
     as[ParameterEntity](e) { p =>
       if(!compactFlags) {
         // These two are not represented with compact flags
-        /*
-        if(p.isTypeParam) j += "isTypeParam" -> true
-        if(p.isValueParam) j += "isValueParam" -> true
-        */
+        if(p.isInstanceOf[TypeParam]) j += "isTypeParam" -> true
+        if(p.isInstanceOf[ValueParam]) j += "isValueParam" -> true
       }
       j -= "inTemplate"
     }
@@ -291,7 +289,9 @@ abstract class JsonBuilder[Link : CanBeValue] {
     }
     as[ValueParam](e) { v =>
       j += "resultType" -> createTypeEntity(v.resultType)
-      //FIXME: missing in newversion v.defaultValue foreach { s => j += "defaultValue" -> s }
+      v.defaultValue.foreach( s =>
+         j += "defaultValue" -> s.expression
+      )
       if(v.isImplicit) {
         if(compactFlags) set(j, 'm')
         else j += "isImplicit" -> true
@@ -303,26 +303,44 @@ abstract class JsonBuilder[Link : CanBeValue] {
     j
   }
 
+  def createEntity(tp: TypeParam): JObject = {
+    val j = new JObject
+    j += "name" -> tp.name
+    j += "variance" -> tp.variance
+    if (tp.hi.isDefined){
+      j += "hi" -> tp.hi.get.name
+    }
+    if (tp.lo.isDefined){
+      j += "lo" -> tp.hi.get.name
+    }
+    j
+  }
+
+  def createEntity(vp: ValueParam): JObject = {
+    val j = new JObject
+    j += "name" -> vp.name
+    j += "isImplicit" -> vp.isImplicit
+    if (vp.defaultValue.isDefined) {
+      j += "default" -> vp.defaultValue.get.expression
+    }
+    j += "type" -> vp.resultType.name
+    j
+  }
+
   def createValueParams(vp: List[List[ValueParam]], docs: Map[String, JObject]) = {
-    /* FIXME new version
-    JArray(vp.map(l => JArray(l.map(e => global(e) { e =>
+    JArray(vp.map(l => JArray(l.map(e => {
       val j = createEntity(e)
       docs get e.name foreach { doc => j += "doc" -> doc }
       j
     }))))
-    */
-    new JArray()
   }
 
-  def createTypeParams(tp: List[TypeParam], docs: Map[String, JObject]) = {
-    /* FIXME new version
-    JArray(tp.map(e => global(e) { e =>
+  def createTypeParams(tps: List[TypeParam], docs: Map[String, JObject]) = {
+    JArray(tps.map(e => {
       val j = createEntity(e)
       docs get e.name foreach { doc => j += "doc" -> doc }
       j
     }))
-    */
-    new JArray()
   }
 
   /**
