@@ -1,11 +1,6 @@
 package edu.usc.irds.scala.json
 
-import scala.tools.nsc.doc._
-import model._
-//import comment._
-
-import java.io.{FileOutputStream, OutputStreamWriter, BufferedWriter, File => JFile}
-import scala.collection._
+import java.io.{BufferedWriter, FileOutputStream, OutputStreamWriter, File => JFile}
 
 case class JsonWriter(dir: JFile, fname: String) {
 

@@ -220,17 +220,17 @@ abstract class JsonBuilder[Link : CanBeValue] {
         if(m.isConstructor) j += "isConstructor" -> true
         if(m.isAliasType) j += "isAliasType" -> true
         if(m.isAbstractType) j += "isAbstractType" -> true
-        //if(m.isTemplate) j += "isTemplate" -> true
+        if(m.isType) j += "isType" -> true
       }
     }
 
     as[DocTemplateEntity](e) { t =>
       t.sourceUrl foreach { u => j +?= "sourceUrl" -> u.toString }
-      //FIXME: missing in newversion j +?= "typeParams" -> createTypeParams(t.typeParams, tParams)
+      j +?= "typeParams" -> createTypeParams(t.typeParams, tParams)
       t.parentTypes foreach { p => j += "parentType" -> createTypeEntity(p._2) }
       // "parentTemplates" is not needed and has been removed in Scala trunk (2.9)
       //j +?= "parentTemplates" -> JArray(t.parentTemplates.map(e => global(e)(createEntity _)))
-      //FIXME: missing in newversion j +?= "linearization" -> JArray(t.linearization.map(e => global(e)(createEntity _)))
+      j +?= "linearization" -> JArray(t.linearizationTemplates.map(e => global(e)(createEntity _)))
       j +?= "subClasses" -> JArray(t.directSubClasses.map(e => global(e)(createEntity _)))
       // "members" is constructors + templates + methods + values + abstractTypes + aliasTypes + packages
       j +?= "members" -> JArray(t.members.map(e => global(e)(createEntity _)))
@@ -242,7 +242,7 @@ abstract class JsonBuilder[Link : CanBeValue] {
       t.companion foreach { p => j += "companion" -> global(p)(createEntity _) }
     }
     as[Trait](e) { t =>
-      //FIXME: missing in newversion j +?= "valueParams" -> createValueParams(t.valueParams, vParams)
+      j +?= "valueParams" -> createValueParams(t.valueParams, vParams)
     }
     as[Class](e) { c =>
       //j +?= "constructors" -> JArray(c.constructors.map(e => global(e)(createEntity _)))

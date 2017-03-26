@@ -2,14 +2,14 @@ package edu.usc.irds.scala.json
 
 import scala.tools.nsc.doc._
 import scala.tools.nsc.doc.model._
-
 import java.io.{File => JFile}
+
+import edu.usc.irds.scala.Loggable
 
 import scala.collection._
 import scala.tools.nsc.io.{Directory, Streamable}
 
-abstract class AbstractJsonFactory(val universe: Universe) { self =>
-
+abstract class AbstractJsonFactory(val universe: Universe) extends Loggable{ self =>
 
   val doInline = true
   val typeEntitiesAsHtml = false
@@ -18,7 +18,7 @@ abstract class AbstractJsonFactory(val universe: Universe) { self =>
   val simpleParamsAsString = false
 
   def prepareModel(universe: Universe) = {
-    println("Building JSON model")
+    log.info("Building JSON model")
     val (allModels, allModelsReverse) = buildModels(universe)
     if(simpleParamsAsString) inlineSimpleParams(allModels, allModelsReverse)
     while(allModels.size > allModelsReverse.size) compact(allModels, allModelsReverse)
@@ -65,12 +65,12 @@ abstract class AbstractJsonFactory(val universe: Universe) { self =>
       }
     }
     builder.global(universe.rootPackage)(builder.createEntity _)
-    println("Built "+allModels.size+" global objects ("+allModelsReverse.size+" unique)")
+    log.info("Built "+allModels.size+" global objects ("+allModelsReverse.size+" unique)")
     (allModels, allModelsReverse)
   }
 
   def verify(m: mutable.HashMap[Int, JObject]): (Boolean, Int) = {
-    println("Verifying JSON model")
+    log.info("Verifying JSON model")
     var ok = true
     var count = 0
     val verified = new mutable.HashSet[Int]
@@ -83,7 +83,7 @@ abstract class AbstractJsonFactory(val universe: Universe) { self =>
             case Some(j) =>
               f(ch.target, j)
             case None =>
-              println("Model verification error: Link target "+ch.target+" not found")
+              log.info("Model verification error: Link target "+ch.target+" not found")
               ok = false
           }
         }
@@ -91,14 +91,14 @@ abstract class AbstractJsonFactory(val universe: Universe) { self =>
       }
     }
     for((ord, j) <- m) f(ord, j)
-    println("Verified "+count+" links and "+m.size+" global objects")
+    log.info("Verified "+count+" links and "+m.size+" global objects")
     (ok, count)
   }
 
   def compact(allModels: mutable.HashMap[Int, JObject], allModelsReverse: mutable.HashMap[JObject, Int]) {
     val duplicates = allModels.keys.toSet -- allModelsReverse.values
     val repl = duplicates map { i => (Link(i), Link(allModelsReverse(allModels(i)))) } toMap;
-    println("Replacing duplicates: " + repl)
+    log.info("Replacing duplicates: " + repl)
     allModels --= duplicates
     def replaceIn(j: JBase) {
       j replaceLinks repl
@@ -107,7 +107,7 @@ abstract class AbstractJsonFactory(val universe: Universe) { self =>
     allModels.values foreach { replaceIn _ }
     allModelsReverse.clear
     for((ord, j) <- allModels) allModelsReverse += j -> ord
-    println("Compacted to "+allModels.size+" global objects ("+allModelsReverse.size+" unique)")
+    log.info("Compacted to "+allModels.size+" global objects ("+allModelsReverse.size+" unique)")
   }
 
   def inlineSimpleParams(allModels: mutable.HashMap[Int, JObject], allModelsReverse: mutable.HashMap[JObject, Int]) {
@@ -133,11 +133,11 @@ abstract class AbstractJsonFactory(val universe: Universe) { self =>
     }
     allModelsReverse.clear
     for((ord, j) <- allModels) allModelsReverse += j -> ord
-    println("Compacted to "+allModels.size+" global objects ("+allModelsReverse.size+" unique)")
+    log.info("Compacted to "+allModels.size+" global objects ("+allModelsReverse.size+" unique)")
   }
 
   def renumber(allModels: mutable.HashMap[Int, JObject]) {
-    println("Renumbering objects")
+    log.info("Renumbering objects")
     val repl: Map[Int, Int] = allModels.keys.toSeq.sorted.zipWithIndex.toMap[Int, Int]
 
     val linkRepl = repl map { case (k,v) => (Link(k), Link(v)) }
@@ -170,20 +170,18 @@ abstract class AbstractJsonFactory(val universe: Universe) { self =>
   }
 
   def inline(allModels: mutable.HashMap[Int, JObject]) {
-    println("Finding objects to inline")
+    log.info("Finding objects to inline")
     val keep = findGlobal(allModels)
     allModels.values foreach {
       _ foreachRec {
-        _ match {
-          case j: JObject =>
-            j("_links", JArray.Empty).values foreach {
-              keep += _.asInstanceOf[Link].target
-            }
-          case _ =>
-        }
+        case j: JObject =>
+          j("_links", JArray.Empty).values foreach {
+            keep += _.asInstanceOf[Link].target
+          }
+        case _ =>
       }
     }
-    println("Protecting "+keep.size+" objects")
+    log.info("Protecting "+keep.size+" objects")
     val counts = new mutable.HashMap[Int, Int]
     allModels.values foreach {
       _ foreachRec {
@@ -193,8 +191,8 @@ abstract class AbstractJsonFactory(val universe: Universe) { self =>
       }
     }
     val toInline = (counts filter { case (_,c) => c <= 1 } keys).toSet -- keep
-    if(!toInline.isEmpty) {
-      println("Inlining/eliminating "+toInline.size+" objects")
+    if(toInline.nonEmpty) {
+      log.info("Inlining/eliminating "+toInline.size+" objects")
       val repl = toInline map { i => (Link(i), allModels(i)) } toMap;
       allModels --= toInline
       def replaceIn(j: JBase) {
